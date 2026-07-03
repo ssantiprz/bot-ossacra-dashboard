@@ -12,9 +12,13 @@ const elementos = {
   fechaHasta: document.querySelector("#fechaHasta"),
   mensajeEstado: document.querySelector("#mensajeEstado"),
   estadoConexion: document.querySelector("#estadoConexion"),
+  rangoSeleccionado: document.querySelector("#rangoSeleccionado"),
+  logoInstitucional: document.querySelector("#logoInstitucional"),
   botonesRapidos: document.querySelectorAll("[data-rango]"),
   tablaProvincia: document.querySelector("#tablaProvincia"),
   tablaPlan: document.querySelector("#tablaPlan"),
+  tablaTareasUsuario: document.querySelector("#tablaTareasUsuario"),
+  tablaTareasTipo: document.querySelector("#tablaTareasTipo"),
 };
 
 const kpis = {
@@ -32,6 +36,7 @@ const kpis = {
 
 let graficoDiario;
 let graficoFueraHorario;
+const detallesUsuariosAbiertos = new Map();
 
 function aISOFecha(fecha) {
   return fecha.toISOString().slice(0, 10);
@@ -59,6 +64,10 @@ function formatearPorcentaje(valor) {
 function formatearFechaCorta(valor) {
   const fecha = new Date(`${valor}T00:00:00`);
   return Number.isNaN(fecha.getTime()) ? valor : formatoFecha.format(fecha);
+}
+
+function actualizarRangoSeleccionado() {
+  elementos.rangoSeleccionado.textContent = `${formatearFechaCorta(elementos.fechaDesde.value)} - ${formatearFechaCorta(elementos.fechaHasta.value)}`;
 }
 
 function definirRangoPorDefecto() {
@@ -116,22 +125,33 @@ async function cargarDashboard() {
   definirCargando(true);
 
   try {
-    const [datosKpis, resumenDiario, resumenProvincia, resumenPlan] = await Promise.all([
+    actualizarRangoSeleccionado();
+    detallesUsuariosAbiertos.clear();
+
+    const resultados = await Promise.allSettled([
       llamarRpc("get_dashboard_kpis", parametros),
       llamarRpc("get_dashboard_resumen_diario", parametros),
       llamarRpc("get_dashboard_resumen_provincia", parametros),
       llamarRpc("get_dashboard_resumen_plan", parametros),
+      llamarRpc("get_dashboard_tareas_por_usuario", parametros),
+      llamarRpc("get_dashboard_tareas_por_tipo", parametros),
     ]);
+
+    const [datosKpis, resumenDiario, resumenProvincia, resumenPlan, tareasUsuario, tareasTipo] = resultados.map((resultado) => (resultado.status === "fulfilled" ? resultado.value : []));
+    const errores = resultados.filter((resultado) => resultado.status === "rejected").map((resultado) => resultado.reason.message);
 
     actualizarKpis(datosKpis[0] || {});
     actualizarGraficoDiario(resumenDiario);
     actualizarGraficoFueraHorario(resumenDiario);
     renderizarTablaProvincia(resumenProvincia);
     renderizarTablaPlan(resumenPlan);
+    renderizarTablaTareasUsuario(tareasUsuario);
+    renderizarTablaTareasTipo(tareasTipo);
 
-    const sinDatos = !datosKpis.length && !resumenDiario.length && !resumenProvincia.length && !resumenPlan.length;
-    elementos.estadoConexion.textContent = "Datos actualizados";
-    if (sinDatos) mostrarMensaje("Sin datos para el rango seleccionado", "vacio");
+    const sinDatos = !datosKpis.length && !resumenDiario.length && !resumenProvincia.length && !resumenPlan.length && !tareasUsuario.length && !tareasTipo.length;
+    elementos.estadoConexion.textContent = errores.length ? "Datos parciales" : "Datos actualizados";
+    if (errores.length) mostrarMensaje(`Algunas consultas fallaron: ${errores.join(" | ")}`, "error");
+    else if (sinDatos) mostrarMensaje("Sin datos para el rango seleccionado", "vacio");
     else ocultarMensaje();
   } catch (error) {
     console.error(error);
@@ -161,9 +181,9 @@ function actualizarGraficoDiario(datos) {
     data: {
       labels: etiquetas,
       datasets: [
-        { label: "Mensajes entrantes", data: datos.map((fila) => valorNumerico(fila.mensajes_entrantes)), borderColor: "#174b7a", backgroundColor: "rgba(23,75,122,.12)", tension: .35, fill: true },
-        { label: "Interacciones diarias", data: datos.map((fila) => valorNumerico(fila.interacciones_diarias)), borderColor: "#16845b", backgroundColor: "rgba(22,132,91,.10)", tension: .35 },
-        { label: "Recontactos", data: datos.map((fila) => valorNumerico(fila.recontactos)), borderColor: "#b54708", backgroundColor: "rgba(181,71,8,.10)", tension: .35 },
+        { label: "Mensajes entrantes", data: datos.map((fila) => valorNumerico(fila.mensajes_entrantes)), borderColor: "#1f4f3d", backgroundColor: "rgba(31,79,61,.12)", tension: .35, fill: true },
+        { label: "Interacciones diarias", data: datos.map((fila) => valorNumerico(fila.interacciones_diarias)), borderColor: "#40a85f", backgroundColor: "rgba(64,168,95,.10)", tension: .35 },
+        { label: "Recontactos", data: datos.map((fila) => valorNumerico(fila.recontactos)), borderColor: "#6f7f39", backgroundColor: "rgba(111,127,57,.10)", tension: .35 },
       ],
     },
     options: opcionesGrafico(),
@@ -176,8 +196,8 @@ function actualizarGraficoFueraHorario(datos) {
     data: {
       labels: etiquetas,
       datasets: [
-        { type: "bar", label: "Mensajes fuera de horario", data: datos.map((fila) => valorNumerico(fila.mensajes_fuera_de_horario)), backgroundColor: "rgba(23,75,122,.72)", yAxisID: "y" },
-        { type: "line", label: "% Fuera de horario", data: datos.map((fila) => valorNumerico(fila.porcentaje_fuera_de_horario)), borderColor: "#b42318", backgroundColor: "rgba(180,35,24,.12)", tension: .35, yAxisID: "y1" },
+        { type: "bar", label: "Mensajes fuera de horario", data: datos.map((fila) => valorNumerico(fila.mensajes_fuera_de_horario)), backgroundColor: "rgba(47,107,79,.72)", yAxisID: "y" },
+        { type: "line", label: "% Fuera de horario", data: datos.map((fila) => valorNumerico(fila.porcentaje_fuera_de_horario)), borderColor: "#6f7f39", backgroundColor: "rgba(111,127,57,.12)", tension: .35, yAxisID: "y1" },
       ],
     },
     options: opcionesGrafico({ dobleEje: true }),
@@ -206,13 +226,20 @@ function crearFila(celdas) {
   return fila;
 }
 
-function renderizarTabla(tbody, datos, columnas) {
+function agregarFilaVacia(tbody, cantidadColumnas, mensaje = "Sin datos para el rango seleccionado") {
+  const fila = document.createElement("tr");
+  fila.className = "fila-vacia";
+  const celda = document.createElement("td");
+  celda.colSpan = cantidadColumnas;
+  celda.textContent = mensaje;
+  fila.appendChild(celda);
+  tbody.appendChild(fila);
+}
+
+function renderizarTabla(tbody, datos, columnas, mensajeVacio = "Sin datos para el rango seleccionado") {
   tbody.innerHTML = "";
   if (!datos.length) {
-    const fila = document.createElement("tr");
-    fila.className = "fila-vacia";
-    fila.innerHTML = `<td colspan="${columnas.length}">Sin datos para el rango seleccionado</td>`;
-    tbody.appendChild(fila);
+    agregarFilaVacia(tbody, columnas.length, mensajeVacio);
     return;
   }
   datos.forEach((fila) => tbody.appendChild(crearFila(columnas.map((columna) => columna.formato(fila[columna.clave])))));
@@ -245,10 +272,132 @@ function renderizarTablaPlan(datos) {
   ]);
 }
 
+
+function renderizarTablaTareasTipo(datos) {
+  renderizarTabla(elementos.tablaTareasTipo, datos, [
+    { clave: "tipo_gestion", formato: (v) => v || "—" },
+    { clave: "task_type_name", formato: (v) => v || "—" },
+    { clave: "tareas_generadas", formato: formatearNumero },
+    { clave: "tareas_completadas", formato: formatearNumero },
+    { clave: "tareas_pendientes", formato: formatearNumero },
+    { clave: "porcentaje_completadas", formato: formatearPorcentaje },
+  ], "Sin tareas para el rango seleccionado");
+}
+
+function obtenerClaveUsuario(fila, indice) {
+  return fila.responsible_user_id == null ? `sin-id-${indice}` : String(fila.responsible_user_id);
+}
+
+function renderizarTablaTareasUsuario(datos) {
+  elementos.tablaTareasUsuario.innerHTML = "";
+  if (!datos.length) {
+    agregarFilaVacia(elementos.tablaTareasUsuario, 6, "Sin tareas para el rango seleccionado");
+    return;
+  }
+
+  datos.forEach((fila, indice) => {
+    const claveUsuario = obtenerClaveUsuario(fila, indice);
+    const filaUsuario = document.createElement("tr");
+    const usuario = fila.responsible_user_name || (fila.responsible_user_id == null ? "Sin responsable" : `Usuario ${fila.responsible_user_id}`);
+    [
+      usuario,
+      formatearNumero(fila.tareas_generadas),
+      formatearNumero(fila.tareas_completadas),
+      formatearNumero(fila.tareas_pendientes),
+      formatearPorcentaje(fila.porcentaje_completadas),
+    ].forEach((valor) => {
+      const td = document.createElement("td");
+      td.textContent = valor;
+      filaUsuario.appendChild(td);
+    });
+
+    const celdaDetalle = document.createElement("td");
+    const botonDetalle = document.createElement("button");
+    botonDetalle.type = "button";
+    botonDetalle.className = "boton boton--detalle";
+    const sinIdUsuario = fila.responsible_user_id == null;
+    botonDetalle.textContent = sinIdUsuario ? "Sin ID" : detallesUsuariosAbiertos.has(claveUsuario) ? "Cerrar" : "Ver detalle";
+    botonDetalle.disabled = sinIdUsuario;
+    if (!sinIdUsuario) botonDetalle.addEventListener("click", () => alternarDetalleUsuario(fila, claveUsuario));
+    celdaDetalle.appendChild(botonDetalle);
+    filaUsuario.appendChild(celdaDetalle);
+    elementos.tablaTareasUsuario.appendChild(filaUsuario);
+
+    if (detallesUsuariosAbiertos.has(claveUsuario)) {
+      elementos.tablaTareasUsuario.appendChild(crearFilaDetalle(detallesUsuariosAbiertos.get(claveUsuario), claveUsuario));
+    }
+  });
+}
+
+async function alternarDetalleUsuario(filaUsuario, claveUsuario) {
+  if (detallesUsuariosAbiertos.has(claveUsuario)) {
+    detallesUsuariosAbiertos.delete(claveUsuario);
+    cargarDashboard();
+    return;
+  }
+
+  if (filaUsuario.responsible_user_id == null) {
+    mostrarMensaje("No se puede consultar el detalle porque el usuario no tiene responsible_user_id.", "error");
+    return;
+  }
+
+  try {
+    mostrarMensaje("Cargando detalle de tareas...", "info");
+    const detalle = await llamarRpc("get_dashboard_tareas_usuario_detalle", {
+      p_fecha_desde: elementos.fechaDesde.value,
+      p_fecha_hasta: elementos.fechaHasta.value,
+      p_responsible_user_id: filaUsuario.responsible_user_id,
+    });
+    detallesUsuariosAbiertos.set(claveUsuario, detalle);
+    const tareasUsuario = await llamarRpc("get_dashboard_tareas_por_usuario", {
+      p_fecha_desde: elementos.fechaDesde.value,
+      p_fecha_hasta: elementos.fechaHasta.value,
+    });
+    renderizarTablaTareasUsuario(tareasUsuario);
+    ocultarMensaje();
+  } catch (error) {
+    console.error(error);
+    mostrarMensaje(`Error al consultar detalle de tareas: ${error.message}`, "error");
+  }
+}
+
+function crearFilaDetalle(datos, claveUsuario) {
+  const fila = document.createElement("tr");
+  fila.className = "fila-detalle";
+  const celda = document.createElement("td");
+  celda.colSpan = 6;
+  const contenedor = document.createElement("div");
+  contenedor.className = "detalle-tareas";
+  const tabla = document.createElement("table");
+  tabla.setAttribute("aria-label", `Detalle de tareas del usuario ${claveUsuario}`);
+  tabla.innerHTML = "<thead><tr><th>Tipo de gestión</th><th>Tipo de tarea</th><th>Tareas generadas</th><th>Completadas</th><th>Pendientes</th><th>% cumplimiento</th></tr></thead>";
+  const tbody = document.createElement("tbody");
+  renderizarTabla(tbody, datos, [
+    { clave: "tipo_gestion", formato: (v) => v || "—" },
+    { clave: "task_type_name", formato: (v) => v || "—" },
+    { clave: "tareas_generadas", formato: formatearNumero },
+    { clave: "tareas_completadas", formato: formatearNumero },
+    { clave: "tareas_pendientes", formato: formatearNumero },
+    { clave: "porcentaje_completadas", formato: formatearPorcentaje },
+  ], "Sin tareas para el rango seleccionado");
+  tabla.appendChild(tbody);
+  contenedor.appendChild(tabla);
+  celda.appendChild(contenedor);
+  fila.appendChild(celda);
+  return fila;
+}
+
 elementos.formFiltros.addEventListener("submit", (evento) => {
   evento.preventDefault();
   cargarDashboard();
 });
+
+if (elementos.logoInstitucional) {
+  elementos.logoInstitucional.addEventListener("error", () => {
+    elementos.logoInstitucional.classList.add("logo-oculto");
+    elementos.logoInstitucional.removeAttribute("src");
+  });
+}
 
 elementos.botonesRapidos.forEach((boton) => {
   boton.addEventListener("click", () => {
@@ -260,4 +409,5 @@ elementos.botonesRapidos.forEach((boton) => {
 });
 
 definirRangoPorDefecto();
+actualizarRangoSeleccionado();
 cargarDashboard();
