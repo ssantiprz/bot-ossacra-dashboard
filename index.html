@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tablero de Control - Delegación Virtual</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Navegación principal">
+      <a class="sidebar-brand" href="#resumen" aria-label="Ir al resumen">
+        <span class="brand-logo">
+          <img id="logoInstitucional" src="assets/logo.png" alt="Logo institucional" />
+          <span class="brand-logo__fallback" aria-hidden="true">DV</span>
+        </span>
+        <span>
+          <strong>Delegación Virtual</strong>
+          <small>Tablero ejecutivo</small>
+        </span>
+      </a>
+      <nav class="sidebar-nav">
+        <a href="#resumen">Resumen</a>
+        <a href="#interacciones">Interacciones</a>
+        <a href="#tareas">Tareas</a>
+        <a href="#provincias">Provincias</a>
+        <a href="#planes">Planes</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar__title">
+          <span class="topbar__icon" aria-hidden="true">DV</span>
+          <div>
+            <p class="eyebrow">Gestión operativa</p>
+            <h1>Tablero de Control - Delegación Virtual</h1>
+            <p class="subtitle">Indicadores de atención y gestión operativa</p>
+          </div>
+        </div>
+        <div class="topbar__meta">
+          <div class="rango-activo">
+            <span>Rango seleccionado</span>
+            <strong id="rangoSeleccionado">—</strong>
+          </div>
+          <div class="estado-conexion" aria-live="polite">
+            <span class="estado-conexion__punto"></span>
+            <span id="estadoConexion">Listo para consultar</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="dashboard-content">
+        <section id="resumen" class="panel filtros" aria-labelledby="tituloFiltros">
+          <div class="panel__encabezado">
+            <div>
+              <h2 id="tituloFiltros">Filtros globales</h2>
+              <p>Aplican a todos los indicadores, gráficos y tablas del tablero.</p>
+            </div>
+          </div>
+
+          <form id="formFiltros" class="filtros__formulario">
+            <label>
+              Fecha desde
+              <input id="fechaDesde" name="fechaDesde" type="date" required />
+            </label>
+            <label>
+              Fecha hasta
+              <input id="fechaHasta" name="fechaHasta" type="date" required />
+            </label>
+            <button class="boton boton--primario" type="submit">Actualizar</button>
+          </form>
+
+          <div class="filtros__rapidos" aria-label="Filtros rápidos">
+            <button class="boton boton--secundario" type="button" data-rango="hoy">Hoy</button>
+            <button class="boton boton--secundario" type="button" data-rango="ultimos7">Últimos 7 días</button>
+            <button class="boton boton--secundario" type="button" data-rango="mesActual">Mes actual</button>
+            <button class="boton boton--secundario" type="button" data-rango="mesAnterior">Mes anterior</button>
+            <button class="boton boton--secundario" type="button" data-rango="anioActual">Año actual</button>
+          </div>
+        </section>
+
+        <div id="mensajeEstado" class="mensaje mensaje--oculto" role="status" aria-live="polite"></div>
+
+        <section class="kpis" aria-label="Indicadores principales">
+          <article class="kpi"><span>Comunicaciones registradas</span><strong id="kpiMensajesEntrantes">—</strong></article>
+          <article class="kpi"><span>Conversaciones únicas</span><strong id="kpiInteraccionesDiarias">—</strong></article>
+          <article class="kpi"><span>Contactos únicos</span><strong id="kpiContactosUnicos">—</strong></article>
+          <article class="kpi"><span>Recontactos</span><strong id="kpiRecontactos">—</strong></article>
+          <article class="kpi"><span>% Recontacto</span><strong id="kpiPorcentajeRecontacto">—</strong></article>
+          <article class="kpi"><span>Mensajes fuera de horario</span><strong id="kpiFueraHorario">—</strong></article>
+          <article class="kpi"><span>% Fuera de horario</span><strong id="kpiPorcentajeFueraHorario">—</strong></article>
+          <article class="kpi"><span>Tareas generadas</span><strong id="kpiTareasGeneradas">—</strong></article>
+          <article class="kpi"><span>Tareas completadas</span><strong id="kpiTareasCompletadas">—</strong></article>
+          <article class="kpi"><span>% Tareas completadas</span><strong id="kpiPorcentajeTareasCompletadas">—</strong></article>
+        </section>
+
+        <section id="interacciones" class="grilla-graficos">
+          <article class="panel grafico">
+            <div class="panel__encabezado">
+              <h2>Resumen diario</h2>
+              <p>Mensajes, interacciones y recontactos por fecha.</p>
+            </div>
+            <div class="grafico__contenedor"><canvas id="graficoDiario"></canvas></div>
+          </article>
+          <article class="panel grafico">
+            <div class="panel__encabezado">
+              <h2>Fuera de horario</h2>
+              <p>Volumen y porcentaje diario de atención fuera de horario.</p>
+            </div>
+            <div class="grafico__contenedor"><canvas id="graficoFueraHorario"></canvas></div>
+          </article>
+        </section>
+
+        <section id="tareas" class="panel tabla-panel">
+          <div class="panel__encabezado panel__encabezado--acciones">
+            <div>
+              <h2>Tareas por usuario</h2>
+              <p>Cumplimiento operativo por responsable, con detalle desplegable por tipo de gestión.</p>
+            </div>
+          </div>
+          <div class="tabla-contenedor">
+            <table>
+              <thead>
+                <tr><th>Usuario</th><th>Tareas generadas</th><th>Completadas</th><th>Pendientes</th><th>% cumplimiento</th><th>Detalle</th></tr>
+              </thead>
+              <tbody id="tablaTareasUsuario"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel tabla-panel">
+          <div class="panel__encabezado">
+            <h2>Tareas por tipo de gestión</h2>
+            <p>Distribución de tareas generadas, completadas y pendientes por tipo.</p>
+          </div>
+          <div class="tabla-contenedor">
+            <table>
+              <thead>
+                <tr><th>Tipo de gestión</th><th>Tipo de tarea</th><th>Tareas generadas</th><th>Completadas</th><th>Pendientes</th><th>% cumplimiento</th></tr>
+              </thead>
+              <tbody id="tablaTareasTipo"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="provincias" class="panel tabla-panel">
+          <div class="panel__encabezado">
+            <h2>Provincia / Delegación</h2>
+            <p>Detalle agregado por territorio.</p>
+          </div>
+          <div class="tabla-contenedor">
+            <table>
+              <thead>
+                <tr><th>Provincia</th><th>Delegación</th><th>Interacciones</th><th>Comunicaciones</th><th>Contactos únicos</th><th>Recontactos</th><th>% Recontacto</th><th>Fuera de horario</th><th>% Fuera de horario</th><th>Detalle</th></tr>
+              </thead>
+              <tbody id="tablaProvincia"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="planes" class="panel tabla-panel">
+          <div class="panel__encabezado">
+            <h2>Plan</h2>
+            <p>Detalle agregado por plan.</p>
+          </div>
+          <div class="tabla-contenedor">
+            <table>
+              <thead>
+                <tr><th>Plan</th><th>Interacciones</th><th>Mensajes</th><th>Contactos únicos</th><th>Recontactos</th><th>% Recontacto</th><th>Fuera de horario</th><th>% Fuera de horario</th></tr>
+              </thead>
+              <tbody id="tablaPlan"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
