@@ -1,5 +1,5 @@
-const SUPABASE_URL = "PEGAR_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "PEGAR_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://uiyptwgsmpjrwgmwwhoj.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Tf0fqiJEfZaS-yawoQM9Fg_yhrAWQBV";
 // Usar siempre la anon public key de Supabase. Nunca pegar la service_role key ni claves privadas en este archivo.
 
 const clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
