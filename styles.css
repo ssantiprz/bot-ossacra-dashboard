@@ -316,3 +316,28 @@ td { font-weight: 700; }
   .filtros__rapidos .boton { flex: 1 1 145px; }
   .grafico__contenedor { height: 280px; }
 }
+
+body { overflow-x: hidden; }
+.topbar__title > div { min-width: 0; }
+h1 { overflow-wrap: anywhere; }
+.grafico canvas { max-width: 100%; }
+.tabla-panel, .tabla-contenedor { max-width: 100%; }
+
+@media (max-width: 768px) {
+  .main-content { padding: 16px; }
+  .topbar__title { align-items: flex-start; }
+  .brand-logo { flex-basis: 44px; width: 44px; height: 44px; max-width: 44px; max-height: 44px; border-radius: 14px; }
+  .brand-logo img { max-width: 44px; max-height: 44px; padding: 5px; }
+  .topbar__icon { flex-basis: 44px; width: 44px; height: 44px; max-height: 44px; border-radius: 14px; }
+  .filtros__formulario { align-items: stretch; }
+  .filtros__rapidos { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .filtros__rapidos .boton { flex: 0 0 auto; }
+}
+
+@media (max-width: 480px) {
+  .main-content { padding: 14px; }
+  .topbar { padding: 16px; }
+  .panel { padding: 18px; }
+  .topbar__meta, .rango-activo, .estado-conexion { width: 100%; }
+  .estado-conexion { justify-content: flex-start; }
+}

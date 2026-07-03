@@ -37,6 +37,8 @@ const kpis = {
 let graficoDiario;
 let graficoFueraHorario;
 const detallesUsuariosAbiertos = new Map();
+const detallesProvinciaAbiertos = new Map();
+let datosProvinciaActuales = [];
 
 function aISOFecha(fecha) {
   return fecha.toISOString().slice(0, 10);
@@ -127,6 +129,7 @@ async function cargarDashboard() {
   try {
     actualizarRangoSeleccionado();
     detallesUsuariosAbiertos.clear();
+    detallesProvinciaAbiertos.clear();
 
     const resultados = await Promise.allSettled([
       llamarRpc("get_dashboard_kpis", parametros),
@@ -143,6 +146,7 @@ async function cargarDashboard() {
     actualizarKpis(datosKpis[0] || {});
     actualizarGraficoDiario(resumenDiario);
     actualizarGraficoFueraHorario(resumenDiario);
+    datosProvinciaActuales = resumenProvincia;
     renderizarTablaProvincia(resumenProvincia);
     renderizarTablaPlan(resumenPlan);
     renderizarTablaTareasUsuario(tareasUsuario);
@@ -245,18 +249,74 @@ function renderizarTabla(tbody, datos, columnas, mensajeVacio = "Sin datos para 
   datos.forEach((fila) => tbody.appendChild(crearFila(columnas.map((columna) => columna.formato(fila[columna.clave])))));
 }
 
+function obtenerClaveProvincia(fila, indice) {
+  return `${fila.provincia || "sin-provincia"}::${fila.delegacion || "sin-delegacion"}::${indice}`;
+}
+
 function renderizarTablaProvincia(datos) {
-  renderizarTabla(elementos.tablaProvincia, datos, [
-    { clave: "provincia", formato: (v) => v || "—" },
-    { clave: "delegacion", formato: (v) => v || "—" },
-    { clave: "interacciones_diarias", formato: formatearNumero },
-    { clave: "mensajes_entrantes", formato: formatearNumero },
-    { clave: "contactos_unicos", formato: formatearNumero },
-    { clave: "recontactos", formato: formatearNumero },
-    { clave: "porcentaje_recontacto", formato: formatearPorcentaje },
-    { clave: "interacciones_fuera_de_horario", formato: formatearNumero },
-    { clave: "porcentaje_fuera_de_horario", formato: formatearPorcentaje },
-  ]);
+  elementos.tablaProvincia.innerHTML = "";
+  if (!datos.length) {
+    agregarFilaVacia(elementos.tablaProvincia, 10, "Sin datos por provincia");
+    return;
+  }
+
+  datos.forEach((fila, indice) => {
+    const claveProvincia = obtenerClaveProvincia(fila, indice);
+    const filaProvincia = crearFila([
+      fila.provincia || "—",
+      fila.delegacion || "—",
+      formatearNumero(fila.interacciones_diarias),
+      formatearNumero(fila.mensajes_entrantes),
+      formatearNumero(fila.contactos_unicos),
+      formatearNumero(fila.recontactos),
+      formatearPorcentaje(fila.porcentaje_recontacto),
+      formatearNumero(fila.interacciones_fuera_de_horario),
+      formatearPorcentaje(fila.porcentaje_fuera_de_horario),
+    ]);
+
+    const celdaDetalle = document.createElement("td");
+    const botonDetalle = document.createElement("button");
+    botonDetalle.type = "button";
+    botonDetalle.className = "boton boton--detalle";
+    botonDetalle.textContent = detallesProvinciaAbiertos.has(claveProvincia) ? "Cerrar" : "Ver detalle";
+    botonDetalle.addEventListener("click", () => alternarDetalleProvincia(fila, claveProvincia));
+    celdaDetalle.appendChild(botonDetalle);
+    filaProvincia.appendChild(celdaDetalle);
+    elementos.tablaProvincia.appendChild(filaProvincia);
+
+    if (detallesProvinciaAbiertos.has(claveProvincia)) {
+      elementos.tablaProvincia.appendChild(crearFilaDetalleTareas(
+        detallesProvinciaAbiertos.get(claveProvincia),
+        10,
+        `Detalle de tareas de ${fila.provincia || "provincia sin nombre"} / ${fila.delegacion || "delegación sin nombre"}`,
+        "Sin tareas para esta provincia/delegación en el rango seleccionado."
+      ));
+    }
+  });
+}
+
+async function alternarDetalleProvincia(filaProvincia, claveProvincia) {
+  if (detallesProvinciaAbiertos.has(claveProvincia)) {
+    detallesProvinciaAbiertos.delete(claveProvincia);
+    renderizarTablaProvincia(datosProvinciaActuales);
+    return;
+  }
+
+  try {
+    mostrarMensaje("Cargando detalle de provincia/delegación...", "info");
+    const detalle = await llamarRpc("get_dashboard_tareas_provincia_detalle", {
+      p_fecha_desde: elementos.fechaDesde.value,
+      p_fecha_hasta: elementos.fechaHasta.value,
+      p_provincia: filaProvincia.provincia,
+      p_delegacion: filaProvincia.delegacion,
+    });
+    detallesProvinciaAbiertos.set(claveProvincia, detalle);
+    renderizarTablaProvincia(datosProvinciaActuales);
+    ocultarMensaje();
+  } catch (error) {
+    console.error(error);
+    mostrarMensaje(`Error al consultar detalle de provincia/delegación: ${error.message}`, "error");
+  }
 }
 
 function renderizarTablaPlan(datos) {
@@ -269,7 +329,7 @@ function renderizarTablaPlan(datos) {
     { clave: "porcentaje_recontacto", formato: formatearPorcentaje },
     { clave: "interacciones_fuera_de_horario", formato: formatearNumero },
     { clave: "porcentaje_fuera_de_horario", formato: formatearPorcentaje },
-  ]);
+  ], "Sin datos por plan");
 }
 
 
@@ -298,7 +358,8 @@ function renderizarTablaTareasUsuario(datos) {
   datos.forEach((fila, indice) => {
     const claveUsuario = obtenerClaveUsuario(fila, indice);
     const filaUsuario = document.createElement("tr");
-    const usuario = fila.responsible_user_name || (fila.responsible_user_id == null ? "Sin responsable" : `Usuario ${fila.responsible_user_id}`);
+    const nombreUsuario = fila.responsible_user_name;
+    const usuario = nombreUsuario == null || String(nombreUsuario).trim() === "" ? "Sin responsable" : nombreUsuario;
     [
       usuario,
       formatearNumero(fila.tareas_generadas),
@@ -362,14 +423,18 @@ async function alternarDetalleUsuario(filaUsuario, claveUsuario) {
 }
 
 function crearFilaDetalle(datos, claveUsuario) {
+  return crearFilaDetalleTareas(datos, 6, `Detalle de tareas del usuario ${claveUsuario}`, "Sin tareas para el rango seleccionado");
+}
+
+function crearFilaDetalleTareas(datos, cantidadColumnas, etiquetaAccesible, mensajeVacio) {
   const fila = document.createElement("tr");
   fila.className = "fila-detalle";
   const celda = document.createElement("td");
-  celda.colSpan = 6;
+  celda.colSpan = cantidadColumnas;
   const contenedor = document.createElement("div");
   contenedor.className = "detalle-tareas";
   const tabla = document.createElement("table");
-  tabla.setAttribute("aria-label", `Detalle de tareas del usuario ${claveUsuario}`);
+  tabla.setAttribute("aria-label", etiquetaAccesible);
   tabla.innerHTML = "<thead><tr><th>Tipo de gestión</th><th>Tipo de tarea</th><th>Tareas generadas</th><th>Completadas</th><th>Pendientes</th><th>% cumplimiento</th></tr></thead>";
   const tbody = document.createElement("tbody");
   renderizarTabla(tbody, datos, [
@@ -379,7 +444,7 @@ function crearFilaDetalle(datos, claveUsuario) {
     { clave: "tareas_completadas", formato: formatearNumero },
     { clave: "tareas_pendientes", formato: formatearNumero },
     { clave: "porcentaje_completadas", formato: formatearPorcentaje },
-  ], "Sin tareas para el rango seleccionado");
+  ], mensajeVacio);
   tabla.appendChild(tbody);
   contenedor.appendChild(tabla);
   celda.appendChild(contenedor);
