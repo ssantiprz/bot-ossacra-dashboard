@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard OSSACRA - Kommo</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="encabezado">
+    <div class="contenedor encabezado__contenido">
+      <div>
+        <p class="etiqueta">OSSACRA · Supabase · Kommo CRM</p>
+        <h1>Dashboard OSSACRA - Kommo</h1>
+        <p class="subtitulo">Atención, interacciones, recontactos y tareas</p>
+      </div>
+      <div class="estado-conexion" aria-live="polite">
+        <span class="estado-conexion__punto"></span>
+        <span id="estadoConexion">Listo para consultar</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="contenedor">
+    <section class="panel filtros" aria-labelledby="tituloFiltros">
+      <div class="panel__encabezado">
+        <div>
+          <h2 id="tituloFiltros">Filtros</h2>
+          <p>Seleccioná el rango de fechas para actualizar todos los indicadores.</p>
+        </div>
+      </div>
+
+      <form id="formFiltros" class="filtros__formulario">
+        <label>
+          Fecha desde
+          <input id="fechaDesde" name="fechaDesde" type="date" required />
+        </label>
+        <label>
+          Fecha hasta
+          <input id="fechaHasta" name="fechaHasta" type="date" required />
+        </label>
+        <button class="boton boton--primario" type="submit">Actualizar</button>
+      </form>
+
+      <div class="filtros__rapidos" aria-label="Filtros rápidos">
+        <button class="boton boton--secundario" type="button" data-rango="hoy">Hoy</button>
+        <button class="boton boton--secundario" type="button" data-rango="ultimos7">Últimos 7 días</button>
+        <button class="boton boton--secundario" type="button" data-rango="mesActual">Mes actual</button>
+        <button class="boton boton--secundario" type="button" data-rango="mesAnterior">Mes anterior</button>
+        <button class="boton boton--secundario" type="button" data-rango="anioActual">Año actual</button>
+      </div>
+    </section>
+
+    <div id="mensajeEstado" class="mensaje mensaje--oculto" role="status" aria-live="polite"></div>
+
+    <section class="kpis" aria-label="Indicadores principales">
+      <article class="kpi"><span>Mensajes entrantes</span><strong id="kpiMensajesEntrantes">—</strong></article>
+      <article class="kpi"><span>Interacciones diarias</span><strong id="kpiInteraccionesDiarias">—</strong></article>
+      <article class="kpi"><span>Contactos únicos</span><strong id="kpiContactosUnicos">—</strong></article>
+      <article class="kpi"><span>Recontactos</span><strong id="kpiRecontactos">—</strong></article>
+      <article class="kpi"><span>% Recontacto</span><strong id="kpiPorcentajeRecontacto">—</strong></article>
+      <article class="kpi"><span>Mensajes fuera de horario</span><strong id="kpiFueraHorario">—</strong></article>
+      <article class="kpi"><span>% Fuera de horario</span><strong id="kpiPorcentajeFueraHorario">—</strong></article>
+      <article class="kpi"><span>Tareas generadas</span><strong id="kpiTareasGeneradas">—</strong></article>
+      <article class="kpi"><span>Tareas completadas</span><strong id="kpiTareasCompletadas">—</strong></article>
+      <article class="kpi"><span>% Tareas completadas</span><strong id="kpiPorcentajeTareasCompletadas">—</strong></article>
+    </section>
+
+    <section class="grilla-graficos">
+      <article class="panel grafico">
+        <div class="panel__encabezado">
+          <h2>Resumen diario</h2>
+          <p>Mensajes, interacciones y recontactos por fecha.</p>
+        </div>
+        <div class="grafico__contenedor"><canvas id="graficoDiario"></canvas></div>
+      </article>
+      <article class="panel grafico">
+        <div class="panel__encabezado">
+          <h2>Fuera de horario</h2>
+          <p>Volumen y porcentaje diario de atención fuera de horario.</p>
+        </div>
+        <div class="grafico__contenedor"><canvas id="graficoFueraHorario"></canvas></div>
+      </article>
+    </section>
+
+    <section class="panel tabla-panel">
+      <div class="panel__encabezado">
+        <h2>Provincia / Delegación</h2>
+        <p>Detalle agregado por territorio.</p>
+      </div>
+      <div class="tabla-contenedor">
+        <table>
+          <thead>
+            <tr><th>Provincia</th><th>Delegación</th><th>Interacciones</th><th>Mensajes</th><th>Contactos únicos</th><th>Recontactos</th><th>% Recontacto</th><th>Fuera de horario</th><th>% Fuera de horario</th></tr>
+          </thead>
+          <tbody id="tablaProvincia"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel tabla-panel">
+      <div class="panel__encabezado">
+        <h2>Plan</h2>
+        <p>Detalle agregado por plan.</p>
+      </div>
+      <div class="tabla-contenedor">
+        <table>
+          <thead>
+            <tr><th>Plan</th><th>Interacciones</th><th>Mensajes</th><th>Contactos únicos</th><th>Recontactos</th><th>% Recontacto</th><th>Fuera de horario</th><th>% Fuera de horario</th></tr>
+          </thead>
+          <tbody id="tablaPlan"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
