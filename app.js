@@ -348,6 +348,12 @@ function obtenerClaveUsuario(fila, indice) {
   return fila.responsible_user_id == null ? `sin-id-${indice}` : String(fila.responsible_user_id);
 }
 
+
+function obtenerNombreResponsable(fila) {
+  const nombre = fila.responsible_user_name;
+  return nombre == null || String(nombre).trim() === "" ? "Sin responsable" : nombre;
+}
+
 function renderizarTablaTareasUsuario(datos) {
   elementos.tablaTareasUsuario.innerHTML = "";
   if (!datos.length) {
@@ -358,8 +364,7 @@ function renderizarTablaTareasUsuario(datos) {
   datos.forEach((fila, indice) => {
     const claveUsuario = obtenerClaveUsuario(fila, indice);
     const filaUsuario = document.createElement("tr");
-    const nombreUsuario = fila.responsible_user_name;
-    const usuario = nombreUsuario == null || String(nombreUsuario).trim() === "" ? "Sin responsable" : nombreUsuario;
+    const usuario = obtenerNombreResponsable(fila);
     [
       usuario,
       formatearNumero(fila.tareas_generadas),
