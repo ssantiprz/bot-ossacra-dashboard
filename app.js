@@ -181,9 +181,9 @@ function actualizarGraficoDiario(datos) {
     data: {
       labels: etiquetas,
       datasets: [
-        { label: "Mensajes entrantes", data: datos.map((fila) => valorNumerico(fila.mensajes_entrantes)), borderColor: "#1f4f3d", backgroundColor: "rgba(31,79,61,.12)", tension: .35, fill: true },
-        { label: "Interacciones diarias", data: datos.map((fila) => valorNumerico(fila.interacciones_diarias)), borderColor: "#40a85f", backgroundColor: "rgba(64,168,95,.10)", tension: .35 },
-        { label: "Recontactos", data: datos.map((fila) => valorNumerico(fila.recontactos)), borderColor: "#6f7f39", backgroundColor: "rgba(111,127,57,.10)", tension: .35 },
+        { label: "Mensajes entrantes", data: datos.map((fila) => valorNumerico(fila.mensajes_entrantes)), borderColor: "#0f6b3f", backgroundColor: "rgba(15,107,63,.12)", tension: .35, fill: true },
+        { label: "Interacciones diarias", data: datos.map((fila) => valorNumerico(fila.interacciones_diarias)), borderColor: "#6b8e23", backgroundColor: "rgba(107,142,35,.12)", tension: .35 },
+        { label: "Recontactos", data: datos.map((fila) => valorNumerico(fila.recontactos)), borderColor: "#39d353", backgroundColor: "rgba(57,211,83,.12)", tension: .35 },
       ],
     },
     options: opcionesGrafico(),
@@ -196,8 +196,8 @@ function actualizarGraficoFueraHorario(datos) {
     data: {
       labels: etiquetas,
       datasets: [
-        { type: "bar", label: "Mensajes fuera de horario", data: datos.map((fila) => valorNumerico(fila.mensajes_fuera_de_horario)), backgroundColor: "rgba(47,107,79,.72)", yAxisID: "y" },
-        { type: "line", label: "% Fuera de horario", data: datos.map((fila) => valorNumerico(fila.porcentaje_fuera_de_horario)), borderColor: "#6f7f39", backgroundColor: "rgba(111,127,57,.12)", tension: .35, yAxisID: "y1" },
+        { type: "bar", label: "Mensajes fuera de horario", data: datos.map((fila) => valorNumerico(fila.mensajes_fuera_de_horario)), backgroundColor: "rgba(6,61,46,.72)", yAxisID: "y" },
+        { type: "line", label: "% Fuera de horario", data: datos.map((fila) => valorNumerico(fila.porcentaje_fuera_de_horario)), borderColor: "#39d353", backgroundColor: "rgba(107,142,35,.12)", tension: .35, yAxisID: "y1" },
       ],
     },
     options: opcionesGrafico({ dobleEje: true }),

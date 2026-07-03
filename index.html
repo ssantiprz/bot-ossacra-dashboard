@@ -8,19 +8,19 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="layout-ejecutivo">
+  <div class="app-shell">
     <aside class="sidebar" aria-label="Navegación principal">
-      <a class="marca" href="#resumen" aria-label="Ir al resumen">
-        <span class="marca__logo">
+      <a class="sidebar-brand" href="#resumen" aria-label="Ir al resumen">
+        <span class="brand-logo">
           <img id="logoInstitucional" src="assets/logo.png" alt="Logo institucional" />
-          <span class="marca__fallback" aria-hidden="true">DV</span>
+          <span class="brand-logo__fallback" aria-hidden="true">DV</span>
         </span>
         <span>
           <strong>Delegación Virtual</strong>
           <small>Tablero ejecutivo</small>
         </span>
       </a>
-      <nav class="navegacion">
+      <nav class="sidebar-nav">
         <a href="#resumen">Resumen</a>
         <a href="#interacciones">Interacciones</a>
         <a href="#tareas">Tareas</a>
@@ -29,14 +29,17 @@
       </nav>
     </aside>
 
-    <div class="contenido">
-      <header class="encabezado">
-        <div>
-          <p class="etiqueta">Gestión operativa</p>
-          <h1>Tablero de Control - Delegación Virtual</h1>
-          <p class="subtitulo">Indicadores de atención y gestión operativa</p>
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar__title">
+          <span class="topbar__icon" aria-hidden="true">DV</span>
+          <div>
+            <p class="eyebrow">Gestión operativa</p>
+            <h1>Tablero de Control - Delegación Virtual</h1>
+            <p class="subtitle">Indicadores de atención y gestión operativa</p>
+          </div>
         </div>
-        <div class="encabezado__estado">
+        <div class="topbar__meta">
           <div class="rango-activo">
             <span>Rango seleccionado</span>
             <strong id="rangoSeleccionado">—</strong>
@@ -48,7 +51,7 @@
         </div>
       </header>
 
-      <main>
+      <div class="dashboard-content">
         <section id="resumen" class="panel filtros" aria-labelledby="tituloFiltros">
           <div class="panel__encabezado">
             <div>
@@ -171,8 +174,8 @@
             </table>
           </div>
         </section>
-      </main>
-    </div>
+      </div>
+    </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

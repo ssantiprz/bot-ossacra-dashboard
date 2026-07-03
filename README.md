@@ -31,7 +31,7 @@ El tablero busca el logo en:
 assets/logo.png
 ```
 
-Para personalizarlo, agregá o reemplazá ese archivo. Si `assets/logo.png` no existe, la interfaz muestra un fallback visual con las letras `DV` y el diseño no se rompe.
+Para personalizarlo, agregá o reemplazá ese archivo. Se recomienda usar un PNG horizontal o cuadrado, preferentemente con fondo transparente; el CSS limita el tamaño para que el logo no supere el espacio disponible. Si `assets/logo.png` no existe, la interfaz muestra un fallback visual con las letras `DV` y el diseño no se rompe.
 
 ## Secciones incluidas
 
