@@ -19,6 +19,7 @@ const elementos = {
   tablaPlan: document.querySelector("#tablaPlan"),
   tablaTareasUsuario: document.querySelector("#tablaTareasUsuario"),
   tablaTareasTipo: document.querySelector("#tablaTareasTipo"),
+  kpiDemoraResolucion: document.querySelector("#kpiDemoraResolucion"),
 };
 
 const kpis = {
@@ -138,21 +139,26 @@ async function cargarDashboard() {
       llamarRpc("get_dashboard_resumen_plan", parametros),
       llamarRpc("get_dashboard_tareas_por_usuario", parametros),
       llamarRpc("get_dashboard_tareas_por_tipo", parametros),
+      llamarRpc("get_dashboard_tareas_resolucion_kpi", parametros),
+      llamarRpc("get_dashboard_tareas_resolucion_por_usuario", parametros),
     ]);
 
-    const [datosKpis, resumenDiario, resumenProvincia, resumenPlan, tareasUsuario, tareasTipo] = resultados.map((resultado) => (resultado.status === "fulfilled" ? resultado.value : []));
+    const [datosKpis, resumenDiario, resumenProvincia, resumenPlan, tareasUsuario, tareasTipo, resolucionKpi, resolucionUsuario] = resultados.map((resultado) => (resultado.status === "fulfilled" ? resultado.value : []));
     const errores = resultados.filter((resultado) => resultado.status === "rejected").map((resultado) => resultado.reason.message);
 
+    const tareasUsuarioConResolucion = combinarTareasConResolucion(tareasUsuario, resolucionUsuario);
+
     actualizarKpis(datosKpis[0] || {});
+    actualizarKpiResolucion(resolucionKpi[0] || {});
     actualizarGraficoDiario(resumenDiario);
     actualizarGraficoFueraHorario(resumenDiario);
     datosProvinciaActuales = resumenProvincia;
     renderizarTablaProvincia(resumenProvincia);
     renderizarTablaPlan(resumenPlan);
-    renderizarTablaTareasUsuario(tareasUsuario);
+    renderizarTablaTareasUsuario(tareasUsuarioConResolucion);
     renderizarTablaTareasTipo(tareasTipo);
 
-    const sinDatos = !datosKpis.length && !resumenDiario.length && !resumenProvincia.length && !resumenPlan.length && !tareasUsuario.length && !tareasTipo.length;
+    const sinDatos = !datosKpis.length && !resumenDiario.length && !resumenProvincia.length && !resumenPlan.length && !tareasUsuario.length && !tareasTipo.length && !resolucionKpi.length && !resolucionUsuario.length;
     elementos.estadoConexion.textContent = errores.length ? "Datos parciales" : "Datos actualizados";
     if (errores.length) mostrarMensaje(`Algunas consultas fallaron: ${errores.join(" | ")}`, "error");
     else if (sinDatos) mostrarMensaje("Sin datos para el rango seleccionado", "vacio");
@@ -170,6 +176,39 @@ function actualizarKpis(datos) {
   Object.entries(kpis).forEach(([clave, elemento]) => {
     const esPorcentaje = clave.startsWith("porcentaje");
     elemento.textContent = esPorcentaje ? formatearPorcentaje(datos[clave]) : formatearNumero(datos[clave]);
+  });
+}
+
+function formatearDemoraTexto(valor) {
+  if (valor == null) return "Sin datos";
+  const texto = String(valor).trim();
+  return !texto || texto.toLowerCase() === "sin datos" ? "Sin datos" : texto;
+}
+
+function actualizarKpiResolucion(datos) {
+  elementos.kpiDemoraResolucion.textContent = formatearDemoraTexto(datos.demora_promedio_texto);
+}
+
+function obtenerClaveResolucionUsuario(fila) {
+  if (fila.responsible_user_id != null) return `id:${fila.responsible_user_id}`;
+  const nombre = fila.responsible_user_name == null ? "" : String(fila.responsible_user_name).trim();
+  return nombre ? `nombre:${nombre}` : "";
+}
+
+function combinarTareasConResolucion(tareasUsuario, resolucionUsuario) {
+  const resolucionPorUsuario = new Map();
+  resolucionUsuario.forEach((fila) => {
+    const clave = obtenerClaveResolucionUsuario(fila);
+    if (clave) resolucionPorUsuario.set(clave, fila);
+  });
+
+  return tareasUsuario.map((fila) => {
+    const clave = obtenerClaveResolucionUsuario(fila);
+    const resolucion = clave ? resolucionPorUsuario.get(clave) : null;
+    return {
+      ...fila,
+      demora_promedio_texto: resolucion?.demora_promedio_texto,
+    };
   });
 }
 
@@ -357,7 +396,7 @@ function obtenerNombreResponsable(fila) {
 function renderizarTablaTareasUsuario(datos) {
   elementos.tablaTareasUsuario.innerHTML = "";
   if (!datos.length) {
-    agregarFilaVacia(elementos.tablaTareasUsuario, 6, "Sin tareas para el rango seleccionado");
+    agregarFilaVacia(elementos.tablaTareasUsuario, 7, "Sin tareas para el rango seleccionado");
     return;
   }
 
@@ -371,6 +410,7 @@ function renderizarTablaTareasUsuario(datos) {
       formatearNumero(fila.tareas_completadas),
       formatearNumero(fila.tareas_pendientes),
       formatearPorcentaje(fila.porcentaje_completadas),
+      formatearDemoraTexto(fila.demora_promedio_texto),
     ].forEach((valor) => {
       const td = document.createElement("td");
       td.textContent = valor;
@@ -415,11 +455,15 @@ async function alternarDetalleUsuario(filaUsuario, claveUsuario) {
       p_responsible_user_id: filaUsuario.responsible_user_id,
     });
     detallesUsuariosAbiertos.set(claveUsuario, detalle);
-    const tareasUsuario = await llamarRpc("get_dashboard_tareas_por_usuario", {
+    const parametros = {
       p_fecha_desde: elementos.fechaDesde.value,
       p_fecha_hasta: elementos.fechaHasta.value,
-    });
-    renderizarTablaTareasUsuario(tareasUsuario);
+    };
+    const [tareasUsuario, resolucionUsuario] = await Promise.all([
+      llamarRpc("get_dashboard_tareas_por_usuario", parametros),
+      llamarRpc("get_dashboard_tareas_resolucion_por_usuario", parametros),
+    ]);
+    renderizarTablaTareasUsuario(combinarTareasConResolucion(tareasUsuario, resolucionUsuario));
     ocultarMensaje();
   } catch (error) {
     console.error(error);
@@ -428,7 +472,7 @@ async function alternarDetalleUsuario(filaUsuario, claveUsuario) {
 }
 
 function crearFilaDetalle(datos, claveUsuario) {
-  return crearFilaDetalleTareas(datos, 6, `Detalle de tareas del usuario ${claveUsuario}`, "Sin tareas para el rango seleccionado");
+  return crearFilaDetalleTareas(datos, 7, `Detalle de tareas del usuario ${claveUsuario}`, "Sin tareas para el rango seleccionado");
 }
 
 function crearFilaDetalleTareas(datos, cantidadColumnas, etiquetaAccesible, mensajeVacio) {

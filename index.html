@@ -93,6 +93,7 @@
           <article class="kpi"><span>Tareas generadas</span><strong id="kpiTareasGeneradas">—</strong></article>
           <article class="kpi"><span>Tareas completadas</span><strong id="kpiTareasCompletadas">—</strong></article>
           <article class="kpi"><span>% Tareas completadas</span><strong id="kpiPorcentajeTareasCompletadas">—</strong></article>
+          <article class="kpi kpi--ayuda" title="Calculado sobre tareas completadas. Cuando Kommo no informa fecha específica de cierre, se usa la última actualización como cierre estimado."><span>Tiempo promedio de resolución</span><strong id="kpiDemoraResolucion">—</strong><small>Tareas completadas</small></article>
         </section>
 
         <section id="interacciones" class="grilla-graficos">
@@ -122,7 +123,7 @@
           <div class="tabla-contenedor">
             <table>
               <thead>
-                <tr><th>Usuario</th><th>Tareas generadas</th><th>Completadas</th><th>Pendientes</th><th>% cumplimiento</th><th>Detalle</th></tr>
+                <tr><th>Usuario</th><th>Tareas generadas</th><th>Completadas</th><th>Pendientes</th><th>% cumplimiento</th><th>Demora promedio</th><th>Detalle</th></tr>
               </thead>
               <tbody id="tablaTareasUsuario"></tbody>
             </table>
@@ -179,6 +180,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="app.js?v=20260617-usuarios-provincia"></script>
+  <script src="app.js?v=20260706-resolucion-tareas"></script>
 </body>
 </html>

@@ -895,3 +895,11 @@ h1 { overflow-wrap: anywhere; }
     height: 210px !important;
   }
 }
+
+.kpi small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 800;
+}
